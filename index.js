@@ -1,14 +1,23 @@
-let port = process.env.PORT || 5000;
-console.log("Server started at port", port);
+const express = require("express");
+const http = require("http");
+const socketIO = require("socket.io");
 
-let IO = require("socket.io")(port, {
+const app = express();
+const server = http.createServer(app);
+const port = process.env.PORT || 5000;
+
+app.get("/", (req, res) => {
+  res.send("Server is running.");
+});
+
+const io = socketIO(server, {
   cors: {
     origin: "*",
     methods: ["GET", "POST"],
   },
 });
 
-IO.use((socket, next) => {
+io.use((socket, next) => {
   if (socket.handshake.query) {
     let callerId = socket.handshake.query.callerId;
     socket.user = callerId;
@@ -16,7 +25,7 @@ IO.use((socket, next) => {
   }
 });
 
-IO.on("connection", (socket) => {
+io.on("connection", (socket) => {
   console.log(socket.user, "Connected");
   socket.join(socket.user);
 
@@ -49,4 +58,8 @@ IO.on("connection", (socket) => {
       iceCandidate: iceCandidate,
     });
   });
+});
+
+server.listen(port, "0.0.0.0", () => {
+  console.log(`Server started at http://0.0.0.0:${port}`);
 });
